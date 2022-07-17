@@ -11,8 +11,12 @@ type Options struct {
 	BatchSize    uint64
 }
 
-func NewMemoryStore(opt Options) *s.Store {
-	return &s.Store{
-		ProfileStore: NewProfileStore(opt.Path, opt.DumpInterval, opt.BatchSize),
+func NewMemoryStore(opt Options) (*s.Store, error) {
+	pS, err := NewProfileStore(opt.Path, opt.DumpInterval, opt.BatchSize)
+	if err != nil {
+		return nil, err
 	}
+	return &s.Store{
+		ProfileStore: pS,
+	}, nil
 }
