@@ -24,15 +24,7 @@ func (jd *JsonDumper) Dump(d any) error {
 }
 
 func (jd *JsonDumper) FromDump(d any) error {
-	var b []byte
-	_, err := jd.File.Read(b)
-	if err != nil {
-		return err
-	}
-	err = json.Unmarshal(b, d)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	j := json.NewDecoder(jd.File)
+	err := j.Decode(d)
+	return err
 }
