@@ -27,14 +27,14 @@ const (
 	ipv6proto = 58
 )
 
-func ping(ip, listen, network string, proto int, t icmp.Type, rt icmp.Type) (time.Duration, error) {
+func ping(ip, listen, network string, proto int, t icmp.Type, rt icmp.Type, timeout time.Duration) (time.Duration, error) {
 	con, err := icmp.ListenPacket(network, listen)
 	if err != nil {
 		return 0, err
 	}
 	defer con.Close()
 
-	err = con.SetDeadline(time.Now().Add(time.Second * 10))
+	err = con.SetDeadline(time.Now().Add(timeout))
 	if err != nil {
 		return 0, err
 	}
@@ -88,10 +88,10 @@ func ping(ip, listen, network string, proto int, t icmp.Type, rt icmp.Type) (tim
 	return time.Since(start), nil
 }
 
-func Ping(ip string) (time.Duration, error) {
+func Ping(ip string, timeout time.Duration) (time.Duration, error) {
 	if strings.Contains(ip, "::") {
-		return ping(ip, "::1", "udp6", ipv6proto, ipv6.ICMPTypeEchoRequest, ipv6.ICMPTypeEchoReply)
+		return ping(ip, "::1", "udp6", ipv6proto, ipv6.ICMPTypeEchoRequest, ipv6.ICMPTypeEchoReply, timeout)
 	}
 
-	return ping(ip, "0.0.0.0", "udp4", ipv4proto, ipv4.ICMPTypeEcho, ipv4.ICMPTypeEchoReply)
+	return ping(ip, "0.0.0.0", "udp4", ipv4proto, ipv4.ICMPTypeEcho, ipv4.ICMPTypeEchoReply, timeout)
 }
