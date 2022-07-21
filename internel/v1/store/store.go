@@ -7,6 +7,6 @@ type ProfileStore interface {
 	Get(ID uint64) (model.Profile, bool)
 }
 
-type Store struct {
-	ProfileStore ProfileStore
+type Store interface {
+	ProfileStore
 }

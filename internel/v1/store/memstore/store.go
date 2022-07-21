@@ -1,7 +1,6 @@
 package memstore
 
 import (
-	s "github.com/Inari3301/ippinger/internel/v1/store"
 	"time"
 )
 
@@ -11,12 +10,16 @@ type Options struct {
 	BatchSize    uint64
 }
 
-func NewMemoryStore(opt Options) (*s.Store, error) {
+type Store struct {
+	ProfileStore
+}
+
+func New(opt Options) (*Store, error) {
 	pS, err := NewProfileStore(opt.Path, opt.DumpInterval, opt.BatchSize)
 	if err != nil {
 		return nil, err
 	}
-	return &s.Store{
-		ProfileStore: pS,
+	return &Store{
+		*pS,
 	}, nil
 }
