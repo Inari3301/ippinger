@@ -6,8 +6,8 @@ import (
 )
 
 type Ping interface {
-	Ping(ip string, timeout time.Duration)
-	PingByCsv(csv string)
+	Ping(ip string, timeout time.Duration) (model.PingResult, error)
+	PingByCsv(csv []byte) (model.PingByCsvResult, error)
 }
 
 type Profile interface {

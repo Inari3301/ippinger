@@ -11,7 +11,7 @@ type Profile struct {
 }
 
 func (p *Profile) Create(profile model.Profile) error {
-	err := p.s.ProfileStore.Create(profile)
+	err := p.s.Create(profile)
 	if err != nil {
 		return fmt.Errorf("error while create profile with id=%d: %v", profile.ID, err)
 	}
@@ -20,6 +20,6 @@ func (p *Profile) Create(profile model.Profile) error {
 }
 
 func (p *Profile) Check(ID uint64) bool {
-	_, ok := p.s.ProfileStore.Get(ID)
+	_, ok := p.s.Get(ID)
 	return ok
 }
