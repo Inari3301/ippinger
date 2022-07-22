@@ -6,14 +6,13 @@ import (
 	"github.com/Inari3301/ippinger/internel/v1/store/memstore"
 	"github.com/Inari3301/ippinger/internel/v1/usecase/pkgusecase"
 	"log"
-	"os"
 	"runtime"
 )
 
 func main() {
 	runtime.GOMAXPROCS(runtime.NumCPU())
 	s, err := memstore.New(memstore.Options{
-		Path:         os.Args[1],
+		Path:         "/home/amamedov/dev/ippinger/bin",
 		DumpInterval: 15,
 		BatchSize:    100,
 	})
@@ -29,7 +28,7 @@ func main() {
 	}
 	router.Handler("/start", proc.Start)
 	router.Handler("/ping", proc.Ping)
-
+	router.Handler("/ping_csv", proc.PingCsv)
 	bot, err := tgbot.New(tgbot.Options{
 		Token: "5408879578:AAGXUy245KzdSC9fyXBAJ6StXUYOsJhdhwE",
 	}, router)

@@ -59,14 +59,16 @@ func (t *Telebot) Start() {
 		t.lock.Unlock()
 
 		var handler Handler
-		if ctx.Value(state).(State) == None {
+		st := ctx.Value(state).(State)
+		if st == None {
 			handler, exist = t.router.Match(update.Message.Text)
 			if !exist {
 				t.badRequest(update)
 				continue
 			}
 		} else {
-			handler, exist = ctx.Value(currentHandler).(Handler)
+			pattern, exist := ctx.Value(currentHandler).(string)
+			handler, _ = t.router.Match(pattern)
 			if !exist {
 				log.Println("handler does not exists")
 				t.badRequest(update)
