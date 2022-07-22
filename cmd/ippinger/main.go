@@ -2,16 +2,16 @@ package main
 
 import (
 	"github.com/Inari3301/ippinger/internel/v1/delivery/tgbot"
+	"github.com/Inari3301/ippinger/internel/v1/delivery/tgbot/tgmux"
 	"github.com/Inari3301/ippinger/internel/v1/store/memstore"
 	"github.com/Inari3301/ippinger/internel/v1/usecase/pkgusecase"
-	"gopkg.in/telebot.v3"
 	"log"
 	"os"
 	"runtime"
-	"time"
 )
 
 func main() {
+	runtime.GOMAXPROCS(runtime.NumCPU())
 	s, err := memstore.New(memstore.Options{
 		Path:         os.Args[1],
 		DumpInterval: 15,
@@ -22,12 +22,18 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	runtime.LockOSThread()
 	u := pkgusecase.New(s)
-	bot, err := tgbot.New(u, telebot.Settings{
-		Token:  os.Getenv("IPPINGER_TOKEN"),
-		Poller: &telebot.LongPoller{Timeout: 10 * time.Second},
-	})
+	router := tgmux.New()
+	proc := tgbot.Processor{
+		U: u,
+	}
+	router.Handler("/start", proc.Start)
+	router.Handler("/ping", proc.Ping)
+
+	bot, err := tgbot.New(tgbot.Options{
+		Token: "5408879578:AAGXUy245KzdSC9fyXBAJ6StXUYOsJhdhwE",
+	}, router)
+
 	if err != nil {
 		log.Fatalln(err)
 	}

@@ -14,9 +14,9 @@ var (
 	image = []string{"ip", "timeout"}
 )
 
-type Ping struct{}
+type P struct{}
 
-func (p *Ping) Ping(ip string, timeout time.Duration) (model.PingResult, error) {
+func (p *P) Ping(ip string, timeout time.Duration) (model.PingResult, error) {
 	d, err := ping.Ping(ip, timeout)
 	if err != nil {
 		return model.PingResult{}, err
@@ -28,7 +28,7 @@ func (p *Ping) Ping(ip string, timeout time.Duration) (model.PingResult, error) 
 	}, nil
 }
 
-func (p *Ping) PingByCsv(csvDoc []byte) (model.PingByCsvResult, error) {
+func (p *P) PingByCsv(csvDoc []byte) (model.PingByCsvResult, error) {
 	buf := bytes.NewBuffer(csvDoc)
 	csvReader := csv.NewReader(buf)
 	records, err := csvReader.ReadAll()
@@ -74,9 +74,9 @@ func (p *Ping) PingByCsv(csvDoc []byte) (model.PingByCsvResult, error) {
 			}
 
 			c <- model.PingResult{
-				IP: ip,
+				IP:       ip,
 				Duration: lag,
-				Error: "",
+				Error:    "",
 			}
 		}(i)
 	}
