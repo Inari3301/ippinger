@@ -29,40 +29,19 @@ func (p *P) Ping(ip string, timeout time.Duration) (model.PingResult, error) {
 }
 
 func (p *P) PingByCsv(csvDoc []byte) (model.PingByCsvResult, error) {
-	buf := bytes.NewBuffer(csvDoc)
-	csvReader := csv.NewReader(buf)
-	records, err := csvReader.ReadAll()
+	pingList, err := getPingListFromCsv(csvDoc)
 	if err != nil {
 		return model.PingByCsvResult{}, err
 	}
-	if len(records) == 0 {
-		return model.PingByCsvResult{}, fmt.Errorf("emty csv file")
+
+	if pingList == nil {
+		return model.PingByCsvResult{}, nil
 	}
 
-	if len(records[0]) < len(image) {
-		return model.PingByCsvResult{}, fmt.Errorf("bad scv file, need columns %s|%s", image[0], image[1])
-	}
-
-	if records[0][0] != image[0] || records[0][1] != image[1] {
-		return model.PingByCsvResult{}, fmt.Errorf("bad scv file, need columns %s|%s", image[0], image[1])
-	}
-
-	records = records[1:]
-	recordsNum := len(records[0])
-	c := make(chan model.PingResult, recordsNum)
-	for i := 0; i < recordsNum; i++ {
-		go func(index int) {
-			ip := records[0][index]
-			timeout, err := strconv.ParseUint(records[1][index], 10, 64)
-			if err != nil {
-				c <- model.PingResult{
-					IP:       ip,
-					Duration: 0,
-					Error:    err.Error(),
-				}
-				return
-			}
-
+	c := make(chan model.PingResult, len(pingList))
+	defer close(c)
+	for _, pingEntity := range pingList {
+		go func(ip string, timeout int64) {
 			lag, err := ping.Ping(ip, time.Duration(timeout)*time.Second)
 			if err != nil {
 				c <- model.PingResult{
@@ -78,15 +57,56 @@ func (p *P) PingByCsv(csvDoc []byte) (model.PingByCsvResult, error) {
 				Duration: lag,
 				Error:    "",
 			}
-		}(i)
+		}(pingEntity.ip, pingEntity.timeout)
 	}
+
 	res := model.PingByCsvResult{}
-	res.PingResults = make([]model.PingResult, recordsNum)
-	i := 0
-	for pgRes := range c {
-		res.PingResults[i] = pgRes
-		i++
+	res.PingResults = []model.PingResult{}
+	for i := 0; i < len(pingList); i++ {
+		pgRes := <-c
+		res.PingResults = append(res.PingResults, pgRes)
 	}
 
 	return res, nil
+}
+
+func getPingListFromCsv(csvDoc []byte) ([]struct {
+	ip      string
+	timeout int64
+}, error) {
+	buf := bytes.NewBuffer(csvDoc)
+	csvReader := csv.NewReader(buf)
+	records, err := csvReader.ReadAll()
+	if err != nil {
+		return nil, err
+	}
+	if records == nil {
+		return nil, nil
+	}
+
+	if len(records) > 2 {
+		return nil, fmt.Errorf("invalid csv")
+	}
+
+	if records[0][0] == image[0] && records[0][1] == image[1] {
+		if len(records[0]) < 2 {
+			return nil, fmt.Errorf("invalid csv")
+		}
+		records = records[1:]
+	}
+
+	out := make([]struct {
+		ip      string
+		timeout int64
+	}, len(records))
+
+	for i := 0; i < len(out); i++ {
+		out[i].ip = records[i][0]
+		out[i].timeout, err = strconv.ParseInt(records[i][1], 10, 64)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return out, nil
 }

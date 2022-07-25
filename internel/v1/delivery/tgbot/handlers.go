@@ -1,11 +1,13 @@
 package tgbot
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/Inari3301/ippinger/internel/v1/usecase"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	"net/http"
 	"strings"
 	"time"
 )
@@ -22,13 +24,13 @@ type Processor struct {
 	U usecase.UseCase
 }
 
-func (p Processor) Start(ctx context.Context, sender Sender, update tgbotapi.Update) context.Context {
+func (p Processor) Start(ctx context.Context, sender *tgbotapi.BotAPI, update tgbotapi.Update) context.Context {
 	msg := tgbotapi.NewMessage(update.Message.Chat.ID, commands)
 	_, _ = sender.Send(msg)
 	return ctx
 }
 
-func (p Processor) Ping(ctx context.Context, sender Sender, update tgbotapi.Update) context.Context {
+func (p Processor) Ping(ctx context.Context, sender *tgbotapi.BotAPI, update tgbotapi.Update) context.Context {
 	s := ctx.Value(state).(State)
 	switch s {
 	case None:
@@ -43,14 +45,14 @@ func (p Processor) Ping(ctx context.Context, sender Sender, update tgbotapi.Upda
 			msg := tgbotapi.NewMessage(update.Message.Chat.ID, err.Error())
 			_, _ = sender.Send(msg)
 		} else {
-			msg := tgbotapi.NewMessage(update.Message.Chat.ID, fmt.Sprintf("%s, %d", str.IP, str.Duration))
+			msg := tgbotapi.NewMessage(update.Message.Chat.ID, fmt.Sprintf("%s, %v"+"\n"+"%s", str.IP, str.Duration, commands))
 			_, _ = sender.Send(msg)
 		}
 	}
 	return ctx
 }
 
-func (p Processor) PingCsv(ctx context.Context, sender Sender, update tgbotapi.Update) context.Context {
+func (p Processor) PingCsv(ctx context.Context, sender *tgbotapi.BotAPI, update tgbotapi.Update) context.Context {
 	s := ctx.Value(state).(State)
 	switch s {
 	case None:
@@ -60,15 +62,33 @@ func (p Processor) PingCsv(ctx context.Context, sender Sender, update tgbotapi.U
 		_, _ = sender.Send(msg)
 	case enter:
 		ctx = context.WithValue(ctx, state, None)
-		str, err := p.U.PingByCsv([]byte(update.Message.Text))
+		f, err := sender.GetFile(tgbotapi.FileConfig{
+			FileID: update.Message.Document.FileID,
+		})
+		if err != nil {
+			_, _ = sender.Send(tgbotapi.NewMessage(update.Message.Chat.ID, err.Error()))
+		}
+		r, _ := http.NewRequest("GET", fmt.Sprintf(tgbotapi.FileEndpoint, sender.Token, f.FilePath), &bytes.Reader{})
+		resp, err := sender.Client.Do(r)
+		if err != nil {
+			_, _ = sender.Send(tgbotapi.NewMessage(update.Message.Chat.ID, err.Error()))
+		}
+		b := make([]byte, 1000)
+		defer resp.Body.Close()
+		n, err := resp.Body.Read(b)
+		fmt.Println(string(b))
+		if err != nil {
+			_, _ = sender.Send(tgbotapi.NewMessage(update.Message.Chat.ID, err.Error()))
+		}
+		b = b[:n]
+		str, err := p.U.PingByCsv(b)
 		if err != nil {
 			msg := tgbotapi.NewMessage(update.Message.Chat.ID, err.Error())
 			_, _ = sender.Send(msg)
-		} else {
-			b, _ := json.Marshal(str.PingResults)
-			msg := tgbotapi.NewMessage(update.Message.Chat.ID, string(b))
-			_, _ = sender.Send(msg)
 		}
+		b, err = json.Marshal(str)
+		msg := tgbotapi.NewMessage(update.Message.Chat.ID, string(b))
+		_, _ = sender.Send(msg)
 	}
 	return ctx
 }

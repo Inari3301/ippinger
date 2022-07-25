@@ -7,8 +7,8 @@ import (
 
 func TestPing_PingByCsv(t *testing.T) {
 	csvFile :=
-		"ip, timeout\n" +
-			"87.240.190.67, 10"
+		"ip,timeout\n" +
+			"87.240.190.67,10"
 	p := P{}
 	r, err := p.PingByCsv([]byte(csvFile))
 	if err != nil {

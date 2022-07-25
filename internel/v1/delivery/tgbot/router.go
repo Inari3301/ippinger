@@ -6,11 +6,12 @@ import (
 )
 
 type (
-	Handler    func(ctx context.Context, sender Sender, update tgbotapi.Update) context.Context
+	Handler    func(ctx context.Context, sender *tgbotapi.BotAPI, update tgbotapi.Update) context.Context
 	Middleware func(ctx context.Context, update tgbotapi.Update) context.Context
 
 	Sender interface {
 		Send(msg tgbotapi.Chattable) (tgbotapi.Message, error)
+		GetFile(config tgbotapi.FileConfig) (tgbotapi.File, error)
 	}
 
 	Router interface {

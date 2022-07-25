@@ -32,7 +32,7 @@ func (r *Router) Match(pattern string) (tgbot.Handler, bool) {
 		return nil, false
 	}
 
-	return func(ctx context.Context, sender tgbot.Sender, update tgbotapi.Update) context.Context {
+	return func(ctx context.Context, sender *tgbotapi.BotAPI, update tgbotapi.Update) context.Context {
 		for _, middleware := range r.middlewares {
 			middleware(ctx, update)
 		}

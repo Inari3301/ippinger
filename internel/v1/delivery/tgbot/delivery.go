@@ -86,7 +86,7 @@ func (t *Telebot) Start() {
 }
 
 func (t *Telebot) badRequest(update tgbotapi.Update) {
-	msg := tgbotapi.NewMessage(update.Message.Chat.ID, "/start")
+	msg := tgbotapi.NewMessage(update.Message.Chat.ID, commands)
 	m, err := t.bot.Send(msg)
 	if err != nil {
 		log.Println(err)

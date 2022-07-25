@@ -29,6 +29,7 @@ func main() {
 	router.Handler("/start", proc.Start)
 	router.Handler("/ping", proc.Ping)
 	router.Handler("/ping_csv", proc.PingCsv)
+
 	bot, err := tgbot.New(tgbot.Options{
 		Token: "5408879578:AAGXUy245KzdSC9fyXBAJ6StXUYOsJhdhwE",
 	}, router)
